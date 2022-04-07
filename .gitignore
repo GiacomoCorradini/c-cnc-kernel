@@ -1,0 +1,17 @@
+*.o
+*.a
+*.slxc
+slprj/
+/examples/*
+!/examples/*.md
+!/examples/src
+/*build*
+/src/defines.h
+Dockerfile
+/arm*
+/bin/*
+/lib/*
+.vscode
+
+/products*/*
+!/products*/.gitkeep
