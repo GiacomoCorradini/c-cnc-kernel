@@ -5,6 +5,8 @@ slprj/
 /examples/*
 !/examples/*.md
 !/examples/src
+!/examples/include
+!/examples/main
 /*build*
 /src/defines.h
 Dockerfile
