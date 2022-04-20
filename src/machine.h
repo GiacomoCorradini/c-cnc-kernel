@@ -23,7 +23,7 @@ data_t machine_A(machine_t *m);
 
 data_t machine_tq(machine_t *m);
 
-data_t *machine_zero(machine_t *m);
+point_t *machine_zero(machine_t *m);
 
 point_t *machien_offset(machine_t *m);
 

@@ -42,7 +42,7 @@ data_t block_lambda(const block_t *b, data_t time);
 point_t *block_interpolation(block_t *b, data_t lambda);
 
 // print the block in a file
-void block_print(block_t *b, FILE *out);
+void block_print(const block_t *b, FILE *out);
 
 // Getters
 data_t block_length(const block_t *b);

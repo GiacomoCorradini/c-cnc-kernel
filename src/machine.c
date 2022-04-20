@@ -45,7 +45,7 @@ data_t machine_A(machine_t *m) { assert(m); return m->A; }
 
 data_t machine_tq(machine_t *m) { assert(m); return m->tq; }
 
-data_t *machine_zero(machine_t *m) { assert(m); return m->zero; }
+point_t *machine_zero(machine_t *m) { assert(m); return m->zero; }
 
 point_t *machien_offset(machine_t *m) { assert(m); return m->offset; }
 
