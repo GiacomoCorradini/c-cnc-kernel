@@ -2,24 +2,25 @@ cmake_minimum_required(VERSION 3.10)
 # NOTE: This project is mostly already configured.
 #       Go to the "Targets" section to add new products
 #   _____          _ _           _                        
-#  |  __ \        | (_)         (_)                       
-#  | |__) | __ ___| |_ _ __ ___  _ _ __   __ _ _ __ _   _ 
-#  |  ___/ '__/ _ \ | | '_ ` _ \| | '_ \ / _` | '__| | | |
-#  | |   | | |  __/ | | | | | | | | | | | (_| | |  | |_| |
+#  |   \        | (_)         (_)                       
+#  | |) |  ___| |_ _  ___  _ _     _ _  _   _ 
+#  |  ___/ '/ _ \ | | '_  _ \| | '_ \ / _ | '| | | |
+#  | |   | | |  / | | | | | | | | | | | (_| | |  | |_| |
 #  |_|   |_|  \___|_|_|_| |_| |_|_|_| |_|\__,_|_|   \__, |
-#                                                    __/ |
+#                                                    / |
 #                                                   |___/ 
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed! Create a build directory and run CMake from there.")
 endif()
+# This is dynamically updated in defines.h.in:
 set(VERSION "1.0")
 project(C-CNC VERSION ${VERSION} LANGUAGES C CXX)
 
-#  __  __     ____        _ _     _ 
-#  \ \/ /    | __ ) _   _(_) | __| |
+#         ____        _ _     _ 
+#  \ \/ /    |  ) _   _(_) | | |
 #   \  /_____|  _ \| | | | | |/ _` |
 #   /  \_____| |_) | |_| | | | (_| |
-#  /_/\_\    |____/ \__,_|_|_|\__,_|
+#  /_/\_\    |____/ \,_|_|_|\__,_|
 # 
 # Find out target platform
 execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine OUTPUT_VARIABLE TARGET_PLATFORM) #put into TARGET_PLATFORM result of $ gcc -dumpmachine
@@ -68,9 +69,9 @@ endif(NOT CMAKE_BUILD_TYPE)
 message(STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
 #   ____        _ _     _            _   _   _                 
-#  | __ ) _   _(_) | __| |  ___  ___| |_| |_(_)_ __   __ _ ___ 
-#  |  _ \| | | | | |/ _` | / __|/ _ \ __| __| | '_ \ / _` / __|
-#  | |_) | |_| | | | (_| | \__ \  __/ |_| |_| | | | | (_| \__ \
+#  |  ) _   _(_) | | |  ___  ___| |_| |_(_)_     _ ___ 
+#  |  _ \| | | | | |/ _` | / |/ _ \ | | | '_ \ / _` / |
+#  | |_) | |_| | | | (_| | \__ \  / |_| |_| | | | | (_| \ \
 #  |____/ \__,_|_|_|\__,_| |___/\___|\__|\__|_|_| |_|\__, |___/
 #                                                    |___/     
 # COMPILE OPTIONS
@@ -85,6 +86,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED TRUE)
 # RPATH management
+# This embeds the relative path of the dynamic library into the executable
+# So that it can find the library across installations
+# If this is not given, the executable only searches the library in its same 
+# folder or in a system path (/usr/lib, /usr/local/lib)
 if (APPLE)
   set(CMAKE_INSTALL_RPATH "@executable_path/../lib")
 else()
@@ -94,7 +99,7 @@ endif()
 # expect all sources in /src, except mains
 set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
 file(GLOB LIB_SOURCES_CPP "${SOURCE_DIR}/*.cpp")
-file(GLOB LIB_SOURCES "${SOURCE_DIR}/*.{c,h}")
+file(GLOB LIB_SOURCES "${SOURCE_DIR}/*.c")
 # generate defines.h
 configure_file(
   ${SOURCE_DIR}/defines.h.in
@@ -102,38 +107,42 @@ configure_file(
 )
 
 #   _____                    _       
-#  |_   _|_ _ _ __ __ _  ___| |_ ___ 
-#    | |/ _` | '__/ _` |/ _ \ __/ __|
-#    | | (_| | | | (_| |  __/ |_\__ \
+#  |_   _|_ _ _   _  ___| |_ ___ 
+#    | |/ _` | '/ _` |/ _ \ / |
+#    | | (_| | | | (_| |  / |_\__ \
 #    |_|\__,_|_|  \__, |\___|\__|___/
 #                 |___/              
 add_executable(ini_test ${SOURCE_DIR}/main/ini_test.c)
 add_executable(mqtt_test ${SOURCE_DIR}/main/mqtt_test.c)
 add_executable(mqtt_stress ${SOURCE_DIR}/main/mqtt_stress.c)
+add_executable(c-cnc ${SOURCE_DIR}/main/c-cnc.c)
+
 
 list(APPEND TARGETS_LIST
   ini_test
   mqtt_test
   mqtt_stress
+  c-cnc
 )
 
-if(IS_ARM) # X-build: use static libraries
+if(NATIVE) # Native build: use shared libraries
+  add_library(${PROJECT_NAME}_shared SHARED ${LIB_SOURCES} ${LIB_SOURCES_CPP})
+  list(APPEND TARGETS_LIST ${PROJECT_NAME}_shared)
+  target_link_libraries(ini_test ${PROJECT_NAME}_shared)
+  target_link_libraries(mqtt_test ${PROJECT_NAME}_shared mosquitto)
+  target_link_libraries(mqtt_stress ${PROJECT_NAME}_shared mosquitto)
+  target_link_libraries(c-cnc ${PROJECT_NAME}_shared m)
+else() # X-build: use static libraries
   add_library(${PROJECT_NAME}_static STATIC ${LIB_SOURCES} ${LIB_SOURCES_CPP})
   target_link_libraries(ini_test ${PROJECT_NAME}_static)
   target_link_libraries(mqtt_test ${PROJECT_NAME}_static mosquitto_static ssl crypto dl pthread)
   target_link_libraries(mqtt_stress ${PROJECT_NAME}_static mosquitto_static ssl crypto dl pthread)
-else() # Native build: use shared libraries
-  add_library(${PROJECT_NAME}_shared SHARED ${LIB_SOURCES} ${LIB_SOURCES_CPP})
-  target_link_libraries(ini_test ${PROJECT_NAME}_shared)
-  target_link_libraries(mqtt_test ${PROJECT_NAME}_shared mosquitto)
-  target_link_libraries(mqtt_stress ${PROJECT_NAME}_shared mosquitto)
-  list(APPEND TARGETS_LIST ${PROJECT_NAME}_shared)
 endif()
 
 #   _____           _        _ _ 
 #  |_   _|         | |      | | |
-#    | |  _ __  ___| |_ __ _| | |
-#    | | | '_ \/ __| __/ _` | | |
+#    | |  _   ___| |_  _| | |
+#    | | | '_ \/ | / _` | | |
 #   _| |_| | | \__ \ || (_| | | |
 #  |_____|_| |_|___/\__\__,_|_|_|
 if(NATIVE)
@@ -148,23 +157,23 @@ install(TARGETS ${TARGETS_LIST}
 )
 
 #   _____           _               _             
-#  |  __ \         | |             (_)            
-#  | |__) |_ _  ___| | ____ _  __ _ _ _ __   __ _ 
-#  |  ___/ _` |/ __| |/ / _` |/ _` | | '_ \ / _` |
-#  | |  | (_| | (__|   < (_| | (_| | | | | | (_| |
-#  |_|   \__,_|\___|_|\_\__,_|\__, |_|_| |_|\__, |
-#                              __/ |         __/ |
+#  |   \         | |             (_)            
+#  | |) |_ _  ___| | ____ _   _ _ _     _ 
+#  |  ___/ _` |/ | |/ / _` |/ _` | | '_ \ / _` |
+#  | |  | (_| | (|   < (_| | (_| | | | | | (_| |
+#  |_|   \,_|\___|_|\_\__,_|\__, |_|_| |_|\__, |
+#                              / |         / |
 #                             |___/         |___/ 
 set(CPACK_GENERATOR "STGZ")
 set(CPACK_PACKAGE_VERSION ${VERSION})
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME}-${CMAKE_BUILD_TYPE})
 include(CPack)
 
-#   _____             _              __ _ _      
-#  |  __ \           | |            / _(_) |     
-#  | |  | | ___   ___| | _____ _ __| |_ _| | ___ 
-#  | |  | |/ _ \ / __| |/ / _ \ '__|  _| | |/ _ \
-#  | |__| | (_) | (__|   <  __/ |  | | | | |  __/
+#   _____             _               _ _      
+#  |   \           | |            / _(_) |     
+#  | |  | | ___   ___| | _____ _ | |_ _| | ___ 
+#  | |  | |/ _ \ / | |/ / _ \ '|  _| | |/ _ \
+#  | || | (_) | (|   <  / |  | | | | |  __/
 #  |_____/ \___/ \___|_|\_\___|_|  |_| |_|_|\___|
 #                                              
 # if not cross-compiling, create Dockerfile for the target platform

@@ -36,7 +36,7 @@ void block_free(block_t *b);
 int block_parse(block_t *b);
 
 // Evaluate the value of lambda at a certain time
-data_t block_lambda(const block_t *b, data_t time);
+data_t block_lambda(const block_t *b, data_t t, data_t *v);
 
 // Interpolation -> projecting lambda in the three coordinates
 point_t *block_interpolation(block_t *b, data_t lambda);

@@ -5,6 +5,7 @@
 //  |_|  |_|\__,_|\___|_| |_|_|_| |_|\___|
                                        
 #include "machine.h"
+#include "inic.h"
 
 typedef struct machine
 {
@@ -20,7 +21,32 @@ machine_t *machine_new(const char *ini_path) {
     exit(EXIT_FAILURE);
   }
   if(ini_path){ // load value from INI file
-    // TODO Parse the INI file
+    void *ini = ini_init(ini_path);
+    int rc = 0;
+    data_t x, y, z;
+
+    if(!ini) {
+      fprintf(stderr, "Could not open the ini file %s\n", ini_path);
+      return NULL;
+    } 
+    rc += ini_get_double(ini, "C-CNC","A",&m->A);
+    rc += ini_get_double(ini, "C-CNC","error",&m->error);
+    rc += ini_get_double(ini, "C-CNC","tq",&m->tq);
+    rc += ini_get_double(ini, "C-CNC","origin_x",&x);
+    rc += ini_get_double(ini, "C-CNC","origin_y",&y);
+    rc += ini_get_double(ini, "C-CNC","origin_z",&z);
+    m->zero = point_new();
+    point_set_xyz(m->zero, x, y, z);
+    rc += ini_get_double(ini, "C-CNC","offset_x",&x);
+    rc += ini_get_double(ini, "C-CNC","offset_y",&y);
+    rc += ini_get_double(ini, "C-CNC","offset_z",&z);
+    m->offset = point_new();
+    point_set_xyz(m->offset, x, y, z);
+    if(rc > 0){
+      fprintf(stderr, "Missing /wrong %d config parameters\n", rc);
+      return NULL;
+    }
+    
   } else { // provide some default value
     m->A = 125;
     m->error = 0.005;
