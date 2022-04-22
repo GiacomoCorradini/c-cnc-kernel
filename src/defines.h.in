@@ -7,7 +7,9 @@
 
 // Needed for asprintf
 #ifdef __linux__
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #endif
 
 #include <sys/param.h>
@@ -21,5 +23,6 @@ typedef double data_t;
 
 // Cmake-generated values:
 #define VERSION "@VERSION@"
+#define BUILD_TYPE "@CMAKE_BUILD_TYPE@"
 
 #endif
