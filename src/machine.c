@@ -84,6 +84,19 @@ void machine_free(machine_t *m) {
 
 // ACCESSORS ======================================================
 
+// Metaprogramming
+
+#define machine_getter(typ, par) \
+typ machine_##par(const machine_t *m) { assert(m); return m->par; }
+
+machine_getter(data_t, A);
+machine_getter(data_t, tq);
+machine_getter(data_t, error);
+machine_getter(data_t *, zero);
+machine_getter(data_t *, offset);
+
+
+/*
 data_t machine_A(machine_t *m) {
   assert(m);
   return m->A;
@@ -108,3 +121,4 @@ data_t machien_error(machine_t *m) {
   assert(m);
   return m->error;
 }
+*/
