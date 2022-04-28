@@ -22,7 +22,7 @@ l = w;
 w_m = [0, 1000, 2000, 3000];
 
 % torque of the motor
-t_m = [1, 1, 0.95, 0] * 200;
+t_m = [1, 1, 0.95, 0] * 2;
 
 figure
-plot(w_m, t_w)
+plot(w_m, t_m)
