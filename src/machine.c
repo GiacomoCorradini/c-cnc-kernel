@@ -92,8 +92,8 @@ typ machine_##par(const machine_t *m) { assert(m); return m->par; }
 machine_getter(data_t, A);
 machine_getter(data_t, tq);
 machine_getter(data_t, error);
-machine_getter(data_t *, zero);
-machine_getter(data_t *, offset);
+machine_getter(point_t *, zero);
+machine_getter(point_t *, offset);
 
 
 /*
@@ -112,12 +112,12 @@ point_t *machine_zero(machine_t *m) {
   return m->zero;
 }
 
-point_t *machien_offset(machine_t *m) {
+point_t *machine_offset(machine_t *m) {
   assert(m);
   return m->offset;
 }
 
-data_t machien_error(machine_t *m) {
+data_t machine_error(machine_t *m) {
   assert(m);
   return m->error;
 }

@@ -140,6 +140,7 @@ else() # X-build: use static libraries
   target_link_libraries(ini_test ${PROJECT_NAME}_static)
   target_link_libraries(mqtt_test ${PROJECT_NAME}_static mosquitto_static ssl crypto dl pthread)
   target_link_libraries(mqtt_stress ${PROJECT_NAME}_static mosquitto_static ssl crypto dl pthread)
+  target_link_libraries(c-cnc ${PROJECT_NAME}_static m)
 endif()
 
 #   ___           _        _ _ 
@@ -183,7 +184,7 @@ if(NATIVE)
   if(NOT TARGET_NAME)
     set(TARGET_NAME "armv7a")
   endif()
-  set_property(CACHE TARGET_NAME PROPERTY STRINGS mipsel armv6 armv7 armv7a arm64 arm64-lts)
+  set_property(CACHE TARGET_NAME PROPERTY STRINGS mipsel armv6 armv7 armv7-lts armv7a arm64 arm64-lts)
   if(TARGET_NAME MATCHES "arm64")
     set(OPENSSL_LINUX_TYPE "linux-generic64")
   else()

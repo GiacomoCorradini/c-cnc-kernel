@@ -34,14 +34,14 @@ void machine_free(machine_t *m);
 
 // ACCESSORS ======================================================
 
-data_t machine_A(machine_t *m);
+data_t machine_A(const machine_t *m);
 
-data_t machine_tq(machine_t *m);
+data_t machine_tq(const machine_t *m);
 
-point_t *machine_zero(machine_t *m);
+point_t *machine_zero(const machine_t *m);
 
-point_t *machien_offset(machine_t *m);
+point_t *machine_offset(const machine_t *m);
 
-data_t machien_error(machine_t *m);
+data_t machine_error(const machine_t *m);
 
 #endif // MACHINE_H

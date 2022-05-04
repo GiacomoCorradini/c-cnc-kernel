@@ -119,7 +119,7 @@ void block_free(block_t *b) {
 }
 
 // print the block in a file
-void block_print(const block_t *b, FILE *out) {
+void block_print(block_t *b, FILE *out) {
   assert(b);
   assert(out);
 
@@ -383,7 +383,7 @@ static int block_arc(block_t *b) {
     xc = x0 + b->i;
     yc = y0 + b->j;
     r2 = hypot(xf - xc, yf - yc);
-    if (fabs(r - r2) > machien_error(b->machine)) {
+    if (fabs(r - r2) > machine_error(b->machine)) {
       fprintf(stderr, "Arc endpoints mismatch error (%f)\n", r - r2);
       return 1;
     }

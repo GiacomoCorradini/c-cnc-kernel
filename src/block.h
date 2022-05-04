@@ -43,7 +43,7 @@ block_t *block_new(const char *line, block_t *prev, machine_t *cfg);
 void block_free(block_t *b);
 
 // print the block in a file
-void block_print(const block_t *b, FILE *out);
+void block_print(block_t *b, FILE *out);
 
 // ALGORITHMS =====================================================
 
