@@ -18,7 +18,7 @@ declare_ini_get(t) { \
   inipp::Ini<char> *ini = static_cast<inipp::Ini<char> *>(ini_p); \
   bool r = inipp::extract(ini->sections[section][field], v); \
   *val = v; \
-  return r ? 1 : 0; \
+  return r ? 0 : 1; \
 }
 
 

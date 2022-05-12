@@ -15,7 +15,7 @@
 
 typedef struct machine {
   data_t A, tq, error; // tq = sampling time
-  point_t *zero, *offset;
+  point_t *zero, *offset, *setpoint;
 } machine_t;
 
 //   _____                 _   _
@@ -36,8 +36,8 @@ machine_t *machine_new(const char *ini_path) {
   }
   if (ini_path) { // load value from INI file
     void *ini = ini_init(ini_path);
-    int rc = 0;
     data_t x, y, z;
+    int rc = 0;
 
     if (!ini) {
       fprintf(stderr, "Could not open the ini file %s\n", ini_path);
@@ -71,6 +71,8 @@ machine_t *machine_new(const char *ini_path) {
     m->offset = point_new();
     point_set_xyz(m->offset, 0, 0, 0);
   }
+  m->setpoint = point_new();
+  point_modal(m->zero, m->setpoint);
   return m;
 }
 
@@ -78,6 +80,7 @@ void machine_free(machine_t *m) {
   assert(m);
   point_free(m->zero);
   point_free(m->offset);
+  point_free(m->setpoint);
   free(m);
   m = NULL;
 }
@@ -94,6 +97,7 @@ machine_getter(data_t, tq);
 machine_getter(data_t, error);
 machine_getter(point_t *, zero);
 machine_getter(point_t *, offset);
+machine_getter(point_t *, setpoint);
 
 
 /*
