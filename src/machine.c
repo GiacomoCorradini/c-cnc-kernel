@@ -13,10 +13,23 @@
 //  | |_| |  __/ (__| | (_| | | |  __/ |_| | (_) | | | |
 //  |____/ \___|\___|_|\__,_|_|  \___|\__|_|\___/|_| |_|
 
+#define BUFLEN 1024
+
 typedef struct machine {
   data_t A, tq, error; // tq = sampling time
   point_t *zero, *offset, *setpoint;
+  char broker_addres[BUFLEN];
+  int broker_port;
+  char pub_topic[BUFLEN];
+  char sub_topic[BUFLEN];
+  char pub_buffer[BUFLEN];
+  struct mosquitto *mqt;
+  struct mosquitto_message *msg;
+  int connecting;
 } machine_t;
+
+static void on_connect(struct mosquitto *mqt, void *obj, int rc);
+static void on_message(struct mosquitto *mqt, void *ud, const struct mosquitto_message *msg);
 
 //   _____                 _   _
 //  |  ___|   _ _ __   ___| |_(_) ___  _ __  ___
@@ -56,6 +69,13 @@ machine_t *machine_new(const char *ini_path) {
     rc += ini_get_double(ini, "C-CNC", "offset_z", &z);
     m->offset = point_new();
     point_set_xyz(m->offset, x, y, z);
+
+    rc += ini_get_char(ini, "MQTT", "broker_addr", m->broker_addres, BUFLEN);
+    rc += ini_get_int(ini, "MQTT", "broker_port", &m->broker_port);
+    rc += ini_get_char(ini, "MQTT", "pub_topic", m->pub_topic, BUFLEN);
+    rc += ini_get_char(ini, "MQTT", "sub_topic", m->sub_topic, BUFLEN);
+
+
     ini_free(ini);
     if (rc > 0) {
       fprintf(stderr, "Missing /wrong %d config parameters\n", rc);
@@ -73,6 +93,12 @@ machine_t *machine_new(const char *ini_path) {
   }
   m->setpoint = point_new();
   point_modal(m->zero, m->setpoint);
+  m->mqt = NULL;
+  if(mosquitto_lib_init() != MOSQ_ERR_SUCCESS) {
+    perror("Could not initialize Mosquitto library");
+    exit(EXIT_FAILURE);
+  }
+  m->connecting = 1;
   return m;
 }
 
@@ -81,8 +107,43 @@ void machine_free(machine_t *m) {
   point_free(m->zero);
   point_free(m->offset);
   point_free(m->setpoint);
+  if(m->mqt) {
+    mosquitto_destroy(m->mqt);
+  }
+  mosquitto_lib_cleanup();
   free(m);
   m = NULL;
+}
+
+// MQTT COMMUNICATIONS ============================================
+
+// return value is 0 on succes
+int machine_connect(machine_t *m, machine_on_message callback) {
+  assert(m);
+  m->mqt = mosquitto_new(NULL, 1, m);
+  if(!m->mqt) {
+    perror("Could not create MQTT");
+    return 1;
+  }
+  mosquitto_connect_callback_set(m->mqt, on_connect);
+  mosquitto_connect_callback_set(m->mqt, callback ? callback : on_message);
+  if(mosquitto_connect(m->mqt, m->broker_addres, m->broker_port, 60) != MOSQ_ERR_SUCCESS) {
+    perror("Could not connect to broker");
+    return 2;
+  }
+
+  while (m->connecting) {
+    mosquitto_loop(m->mqt, -1, 1);
+  }
+  return 0;
+}
+
+int machine_sync(machine_t *m) {
+  return 0;
+}
+
+void machine_disconnect(machine_t *m) {
+
 }
 
 // ACCESSORS ======================================================
@@ -126,3 +187,24 @@ data_t machine_error(machine_t *m) {
   return m->error;
 }
 */
+
+static void on_connect(struct mosquitto *mqt, void *obj, int rc) {
+  machine_t *m = (machine_t *)obj;
+  if (rc == CONNACK_ACCEPTED) {
+    eprintf("-> Connected to %s:%d\n", m->broker_addres, m->broker_port);
+    // subscribe
+    if(mosquitto_subscribe(mqt, NULL, m->sub_topic, 0) != MOSQ_ERR_SUCCESS) {
+      perror("Could not subscribe");
+      exit(EXIT_FAILURE);
+    }
+  } else { // failed to connect
+    eprintf("-X Connection error: %s\n", mosquitto_connack_string(rc));
+    exit(EXIT_FAILURE);
+  }
+  m->connecting = 0;
+}
+
+static void on_message(struct mosquitto *mqt, void *ud, const struct mosquitto_message *msg) {
+  printf("<- message: %s\n", (char *)msg->payload);
+  mosquitto_message_copy(((machine_t *)ud)->msg, msg);
+}

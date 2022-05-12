@@ -1,8 +1,8 @@
 #include "../defines.h"
 #include "../machine.h"
 #include "../program.h"
-#include "../block.c"
-#include "../point.c"
+#include "../block.h"
+#include "../point.h"
 
 // define a macro
 // "..."" means multiple arguments -> they passes as "__VA_ARGS__" to the function
@@ -49,8 +49,9 @@ int main(int argc, char const *argv[]) {
       lambda = block_lambda(b, t, &f);
       sp = block_interpolation(b, lambda);
       if(!sp) continue;
-      printf("%lu,%f,%f,%f,%f,%f,%f,%f\n", block_n(b), t, lambda, lambda * block_length(b), f, point_x(sp), point_z(sp), point_z(sp));
-      point_free(sp);
+      printf("%lu,%f,%f,%f,%f,%f,%f,%f\n", block_n(b), t, lambda, lambda * block_length(b), f, point_x(sp), point_y(sp), point_z(sp));
+      //point_free(sp);
+      machine_sync(machine);
     }
   }
 
