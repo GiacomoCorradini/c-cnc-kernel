@@ -1,0 +1,25 @@
+digraph "C-CNC" {
+  # List of states
+  init [peripheries=2]
+  idel
+  load_block
+  no_motion
+  rapid_motion
+  interp_motion
+  stop [peripheries=2]
+
+  # List of transitions
+  init -> idel
+  idel -> idel
+  idel -> load_block [label="reset"]
+  load_block -> no_motion
+  no_motion -> load_block
+  load_block -> rapid_motion
+  rapid_motion->rapid_motion
+  rapid_motion -> load_block [label="reset"]
+  load_block -> interp_motion
+  interp_motion -> interp_motion
+  interp_motion -> load_block [label="reset"]
+  load_block -> stop
+  idel -> stop
+}
