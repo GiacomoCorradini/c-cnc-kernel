@@ -74,7 +74,7 @@ machine_t *machine_new(const char *ini_path) {
     rc += ini_get_char(ini, "MQTT", "broker_addr", m->broker_addres, BUFLEN);
     rc += ini_get_int(ini, "MQTT", "broker_port", &m->broker_port);
     rc += ini_get_char(ini, "MQTT", "pub_topic", m->pub_topic, BUFLEN);
-    rc += ini_get_char(ini, "MQTT", "sub_topic", m->sub_topic, BUFLEN);
+    rc += ini_get_char(ini, "MQTT", "sub_topic", m->sub_topic, BUFLEN); 
 
 
     ini_free(ini);
@@ -129,7 +129,7 @@ int machine_connect(machine_t *m, machine_on_message callback) {
     return 1;
   }
   mosquitto_connect_callback_set(m->mqt, on_connect);
-  mosquitto_connect_callback_set(m->mqt, callback ? callback : on_message);
+  mosquitto_message_callback_set(m->mqt, callback ? callback : on_message);
   if(mosquitto_connect(m->mqt, m->broker_addres, m->broker_port, 60) != MOSQ_ERR_SUCCESS) {
     perror("Could not connect to broker");
     return 2;
@@ -179,10 +179,13 @@ void machine_listen_update(machine_t *m) {
 }
 
 void machine_disconnect(machine_t *m) {
-  while(mosquitto_want_write(m->mqt)) {
-    usleep(10000);
+  if (m->mqt) {
+    while (mosquitto_want_write(m->mqt)) {
+      mosquitto_loop(m->mqt, 0, 1);
+      usleep(10000);
+    }
+    mosquitto_disconnect(m->mqt);
   }
-  mosquitto_disconnect(m->mqt);
 }
 
 // ACCESSORS ======================================================

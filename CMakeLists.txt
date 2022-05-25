@@ -56,8 +56,16 @@ elseif(UNIX AND NOT APPLE)
 elseif(APPLE)
   message(STATUS "Building on Apple OS X")
   set(NATIVE TRUE)
-  include_directories(/usr/local/include)
-  link_directories(/usr/local/lib)
+  # On Intel Macs, brew uses /usr/local
+  if(EXISTS /usr/local)
+    include_directories(/usr/local/include)
+    link_directories(/usr/local/lib)
+  endif()
+    # on M1 Macs, brew uses /opt/homebrew:
+  if(EXISTS /opt/homebrew)
+    include_directories(/opt/homebrew/include)
+    link_directories(/opt/homebrew/lib)
+  endif()
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -100,8 +108,8 @@ endif()
 # FILES
 # expect all sources in /src, except mains
 set(SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
-file(GLOB LIB_SOURCES_CPP "${SOURCE_DIR}/*.cpp")
-file(GLOB LIB_SOURCES "${SOURCE_DIR}/*.c")
+file(GLOB LIB_SOURCES_CPP "${SOURCE_DIR}/[^_]*.cpp")
+file(GLOB LIB_SOURCES "${SOURCE_DIR}/[^_]*.c")
 # generate defines.h
 configure_file(
   ${SOURCE_DIR}/defines.h.in
@@ -141,7 +149,7 @@ else() # X-build: use static libraries
   target_link_libraries(ini_test ${PROJECT_NAME}_static)
   target_link_libraries(mqtt_test ${PROJECT_NAME}_static mosquitto_static ssl crypto dl pthread)
   target_link_libraries(mqtt_stress ${PROJECT_NAME}_static mosquitto_static ssl crypto dl pthread)
-  target_link_libraries(c-cnc ${PROJECT_NAME}_static m)
+  target_link_libraries(c-cnc ${PROJECT_NAME}_static mosquitto_static ssl crypto dl pthread m)
 endif()
 
 #   ___           _        _ _ 
@@ -186,6 +194,15 @@ if(NATIVE)
     set(TARGET_NAME "armv7a")
   endif()
   set_property(CACHE TARGET_NAME PROPERTY STRINGS mipsel armv6 armv7 armv7-lts armv7a arm64 arm64-lts)
+  set(TARGET_VERSION CACHE STRING "Select TARGET version")
+  if(NOT TARGET_VERSION)
+    if(TARGET_NAME MATCHES "armv7a")
+      set(TARGET_VERSION "20210625-795dd4d")
+    else()
+      set(TARGET_VERSION "latest")
+    endif()
+  endif()
+  set_property(CACHE TARGET_VERSION PROPERTY STRINGS latest 20210625-795dd4d)
   if(TARGET_NAME MATCHES "arm64")
     set(OPENSSL_LINUX_TYPE "linux-generic64")
   else()
@@ -196,7 +213,7 @@ if(NATIVE)
     ${CMAKE_HOME_DIRECTORY}/Dockerfile
     @ONLY
   )
-  message(STATUS "Host Dockerfile generated for target ${TARGET_NAME}")
+  message(STATUS "Host Dockerfile generated for target ${TARGET_NAME}:${TARGET_VERSION}")
   message(NOTICE "   * Build with: docker build -t ${TARGET_NAME} .")
   message(NOTICE "   * then:       docker run --rm ${TARGET_NAME} > ${TARGET_NAME} && chmod a+x ${TARGET_NAME}")
 endif()
