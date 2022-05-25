@@ -12,9 +12,9 @@
 #endif
 #endif
 
-#include <sys/param.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/param.h>
 #include <stdint.h>
 #include <math.h>
 #include <assert.h>
@@ -27,5 +27,7 @@ typedef double data_t;
 #define BUILD_TYPE "@CMAKE_BUILD_TYPE@"
 
 #define eprintf(...) fprintf(stderr, __VA_ARGS__)
+
+uint64_t wait_next(uint64_t interval);
 
 #endif

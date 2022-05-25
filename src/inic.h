@@ -59,7 +59,6 @@ void *ini_init(char const *path);
  * 
  * @param ini an ini file object
  */
-
 void ini_free(void *ini);
 
 /**

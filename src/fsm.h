@@ -27,7 +27,7 @@ Functions and types have been generated with prefix "ccnc_"
 
 typedef struct {
   char *ini_file;     // INI file
-  char *prog_file;    // G-code program file
+  char const *prog_file;    // G-code program file
   machine_t *machine; // machine object
   program_t *prog;    // program object
   data_t t_tot;       // total program timer

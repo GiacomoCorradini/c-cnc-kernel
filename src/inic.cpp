@@ -12,13 +12,13 @@
 #include "inic.h"
 using namespace std;
 
-#define ini_get(t) \
-declare_ini_get(t) { \
-  t v = 0; \
+#define ini_get(t)                                                \
+declare_ini_get(t) {                                              \
+  t v = 0;                                                        \
   inipp::Ini<char> *ini = static_cast<inipp::Ini<char> *>(ini_p); \
-  bool r = inipp::extract(ini->sections[section][field], v); \
-  *val = v; \
-  return r ? 0 : 1; \
+  bool r = inipp::extract(ini->sections[section][field], v);      \
+  *val = v;                                                       \
+  return r ? 0 : 1;                                               \
 }
 
 
@@ -35,7 +35,7 @@ void *ini_init(const char *path) {
     return NULL;
 }
 
-void ini_free(void *ini){
+void ini_free(void *ini) {
   delete static_cast<inipp::Ini<char> *>(ini);
 }
 
@@ -50,5 +50,5 @@ int ini_get_char(void *ini_p, const char *section, const char *field, char *val,
   inipp::Ini<char> *ini = static_cast<inipp::Ini<char> *>(ini_p);
   bool r = inipp::extract(ini->sections[section][field], str);
   strncpy(val, str.c_str(), len);
-  return r ? 1 : 0;
+  return r ? 0 : 1;
 }

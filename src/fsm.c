@@ -14,6 +14,10 @@ Functions and types have been generated with prefix "ccnc_"
 ******************************************************************************/
 
 #include "fsm.h"
+#include "block.h"
+#include "point.h"
+#include <unistd.h>
+#include <termios.h>
 
 // Install signal handler: 
 // SIGINT requests a transition to state stop
@@ -73,7 +77,42 @@ ccnc_state_t ccnc_do_init(ccnc_state_data_t *data) {
   ccnc_state_t next_state = CCNC_STATE_IDLE;
   signal(SIGINT, signal_handler); 
   
-  /* Your Code Here */
+  /** Steps:
+   * print software version
+   * load and parse the G-code file
+   * print G-code file
+   * connect with the machine
+   * in case of errors, transitions to stop
+   */
+
+  eprintf("C-CNC ver. %s, %s build\n", VERSION, BUILD_TYPE);
+  data->machine = machine_new(data->ini_file);
+  if(!data->machine) {
+    next_state = CCNC_STATE_STOP;
+    goto next_state;
+  }
+
+  data->prog = program_new(data->prog_file);
+
+  if(!data->prog) {
+    next_state = CCNC_STATE_STOP;
+    goto next_state;
+  }
+
+  if(program_parse(data->prog, data->machine) == EXIT_FAILURE) {
+    next_state = CCNC_STATE_STOP;
+    goto next_state;
+  }
+
+  eprintf("Parsed the program %s\n", data->prog_file);
+  program_print(data->prog, stderr);
+
+  if(machine_connect(data->machine, NULL)) {
+    next_state = CCNC_STATE_STOP;
+    goto next_state;
+  }
+
+  next_state:
   
   switch (next_state) {
     case CCNC_STATE_IDLE:
@@ -92,8 +131,32 @@ ccnc_state_t ccnc_do_init(ccnc_state_data_t *data) {
 // SIGINT triggers an emergency transition to stop
 ccnc_state_t ccnc_do_idle(ccnc_state_data_t *data) {
   ccnc_state_t next_state = CCNC_NO_CHANGE;
+
+  char key;
+  struct termios old_tio, new_tio;
+
+  eprintf("Press spacebar or 'r' to run, 'q' to quit\n");
+  tcgetattr(STDIN_FILENO, &old_tio);
+  new_tio = old_tio;
+  cfmakeraw(&new_tio);
+  tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+  key = getchar();
+  tcsetattr(STDIN_FILENO, TCSANOW, &old_tio);
+  switch (key)
+  {
+  case 'q':
+  case 'Q':
+    next_state = CCNC_STATE_STOP;
+    break;
+
+  case ' ':
+  case 'r':
+    next_state = CCNC_STATE_LOAD_BLOCK;
+    break;
   
-  /* Your Code Here */
+  default:
+    break;
+  }
   
   switch (next_state) {
     case CCNC_NO_CHANGE:
@@ -117,7 +180,18 @@ ccnc_state_t ccnc_do_idle(ccnc_state_data_t *data) {
 ccnc_state_t ccnc_do_stop(ccnc_state_data_t *data) {
   ccnc_state_t next_state = CCNC_NO_CHANGE;
   
-  /* Your Code Here */
+  eprintf("Clean up..");
+  signal(SIGINT, SIG_DFL);
+  if(data->machine) {
+    machine_disconnect(data->machine);
+    machine_free(data->machine);
+  }
+
+  if(data->prog) {
+    program_free(data->prog);
+  }
+
+  eprintf("done!\n");
   
   switch (next_state) {
     case CCNC_NO_CHANGE:

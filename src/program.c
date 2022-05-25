@@ -1,18 +1,20 @@
-//   ____
-//  |  _ \ _ __ ___   __ _ _ __ __ _ _ __ ___
+//   ____                                      
+//  |  _ \ _ __ ___   __ _ _ __ __ _ _ __ ___  
 //  | |_) | '__/ _ \ / _` | '__/ _` | '_ ` _ \
 //  |  __/| | | (_) | (_| | | | (_| | | | | | |
 //  |_|   |_|  \___/ \__, |_|  \__,_|_| |_| |_|
-//                   |___/
+//                   |___/                     
+// program.c
 
 #include "program.h"
 
-//   ____            _                 _   _
-//  |  _ \  ___  ___| | __ _ _ __ __ _| |_(_) ___  _ __  ___
+
+//   ____            _                 _   _                 
+//  |  _ \  ___  ___| | __ _ _ __ __ _| |_(_) ___  _ __  ___ 
 //  | | | |/ _ \/ __| |/ _` | '__/ _` | __| |/ _ \| '_ \/ __|
 //  | |_| |  __/ (__| | (_| | | | (_| | |_| | (_) | | | \__ \
 //  |____/ \___|\___|_|\__,_|_|  \__,_|\__|_|\___/|_| |_|___/
-
+                                                          
 // Program object structure
 typedef struct program {
   char *filename;                  // file name
@@ -20,6 +22,7 @@ typedef struct program {
   block_t *first, *last, *current; // block pointers
   size_t n;                        // total number of blocks
 } program_t;
+
 
 //   _____                 _   _
 //  |  ___|   _ _ __   ___| |_(_) ___  _ __  ___
@@ -77,6 +80,7 @@ void program_print(const program_t *p, FILE *output) {
   } while (b);
 }
 
+
 // PROCESSING ==================================================================
 
 // parse the program
@@ -98,12 +102,12 @@ int program_parse(program_t *p, machine_t *cfg) {
   // read the file, one line at a time, and create a new block for
   // each line
   p->n = 0;
-  while ((line_len = getline(&line, &n, p->file)) >= 0) {
+  while ( (line_len = getline(&line, &n, p->file)) >= 0 ) {
     // remove trailing newline (\n) replacing it with a terminator
-    if (line[line_len - 1] == '\n') {
-      line[line_len - 1] = '\0';
+    if (line[line_len-1] == '\n') {
+      line[line_len-1] = '\0'; 
     }
-    if (!(b = block_new(line, p->last, cfg))) {
+    if(!(b = block_new(line, p->last, cfg))) {
       fprintf(stderr, "ERROR: creating the block %s\n", line);
       return EXIT_FAILURE;
     }
@@ -111,8 +115,7 @@ int program_parse(program_t *p, machine_t *cfg) {
       fprintf(stderr, "ERROR: parsing the block %s\n", line);
       return EXIT_FAILURE;
     }
-    if (p->first == NULL)
-      p->first = b;
+    if (p->first == NULL) p->first = b;
     p->last = b;
     p->n++;
   }
@@ -125,10 +128,8 @@ int program_parse(program_t *p, machine_t *cfg) {
 // linked-list navigation functions
 block_t *program_next(program_t *p) {
   assert(p);
-  if (p->current == NULL)
-    p->current = p->first;
-  else
-    p->current = block_next(p->current);
+  if (p->current == NULL) p->current = p->first;
+  else p->current = block_next(p->current);
   return p->current;
 }
 
@@ -137,13 +138,12 @@ void program_reset(program_t *p) {
   p->current = NULL;
 }
 
+
+
 // GETTERS =====================================================================
 
-#define program_getter(typ, par, name)                                         \
-  typ program_##name(const program_t *p) {                                     \
-    assert(p);                                                                 \
-    return p->par;                                                             \
-  }
+#define program_getter(typ, par, name) \
+typ program_##name(const program_t *p) { assert(p); return p->par; }
 
 program_getter(char *, filename, filename);
 program_getter(block_t *, first, first);
