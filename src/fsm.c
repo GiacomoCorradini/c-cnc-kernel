@@ -157,6 +157,9 @@ ccnc_state_t ccnc_do_idle(ccnc_state_data_t *data) {
   default:
     break;
   }
+
+  data->t_blk = 0;
+  data->t_tot = 0;
   
   switch (next_state) {
     case CCNC_NO_CHANGE:
@@ -209,7 +212,35 @@ ccnc_state_t ccnc_do_stop(ccnc_state_data_t *data) {
 ccnc_state_t ccnc_do_load_block(ccnc_state_data_t *data) {
   ccnc_state_t next_state = CCNC_STATE_IDLE;
   
-  /* Your Code Here */
+  block_t *b = program_next(data->prog);
+  if(!b) {
+    next_state = CCNC_STATE_IDLE;
+    goto next_state;
+  }
+
+  block_print(b, stderr);
+  switch (block_type(b))
+  {
+  case NO_MOTION:
+    next_state = CCNC_STATE_NO_MOTION;
+    break;
+
+  case RAPID:
+    next_state = CCNC_STATE_RAPID_MOTION;
+    break;
+
+  case LINE:
+  case ARC_CW:
+  case ARC_CCW:
+    next_state = CCNC_STATE_INTERP_MOTION;
+    break;
+  
+  default:
+    next_state = CCNC_STATE_IDLE;
+    break;
+  }
+
+  next_state:
   
   switch (next_state) {
     case CCNC_STATE_IDLE:
@@ -249,7 +280,20 @@ ccnc_state_t ccnc_do_no_motion(ccnc_state_data_t *data) {
 ccnc_state_t ccnc_do_rapid_motion(ccnc_state_data_t *data) {
   ccnc_state_t next_state = CCNC_NO_CHANGE;
   
-  /* Your Code Here */
+  data_t tq = machine_tq(data->machine);
+
+  machine_listen_update(data->machine);
+  data->t_blk += tq;
+  data->t_tot += tq;
+
+  if(machine_error(data->machine) < machine_max_error(data->machine)) {
+    next_state = CCNC_STATE_LOAD_BLOCK;
+  }
+
+  if(_exit_request) {
+    _exit_request = 0;
+    next_state = CCNC_STATE_LOAD_BLOCK;
+  }
   
   switch (next_state) {
     case CCNC_NO_CHANGE:
@@ -273,7 +317,33 @@ ccnc_state_t ccnc_do_rapid_motion(ccnc_state_data_t *data) {
 ccnc_state_t ccnc_do_interp_motion(ccnc_state_data_t *data) {
   ccnc_state_t next_state = CCNC_NO_CHANGE;
   
-  /* Your Code Here */
+  data_t tq = machine_tq(data->machine);
+  data_t lambda, feed;
+  block_t *b = program_current(data->prog);
+  point_t *sp;
+
+  data->t_blk += tq;
+  data->t_tot += tq;
+
+  if(data->t_blk >= block_dt(b) + tq / 2) {
+    next_state = CCNC_STATE_LOAD_BLOCK;
+    goto next_block;
+
+  }
+
+  lambda = block_lambda(b, data->t_blk, &feed);
+  sp = block_interpolate(b, lambda);
+
+  if(!sp) {
+    next_state = CCNC_STATE_LOAD_BLOCK;
+    goto next_block;
+  }
+
+  printf("%lu,%f,%f,%f,%f,%f,%f,%f,%f\n", block_n(b), data->t_tot, data->t_blk, lambda, lambda * block_length(b), feed, point_x(sp), point_y(sp), point_z(sp));
+
+  machine_sync(data->machine);
+
+  next_block: 
   
   switch (next_state) {
     case CCNC_NO_CHANGE:
@@ -307,25 +377,37 @@ ccnc_state_t ccnc_do_interp_motion(ccnc_state_data_t *data) {
 // This function is called in 1 transition:
 // 1. from idle to load_block
 void ccnc_reset(ccnc_state_data_t *data) {
-  /* Your Code Here */
+  data->t_blk = data->t_tot = 0;
+  printf("n,t_tot,t_blk,lambda,s,feed,x,y,z\n");
 }
 
 // This function is called in 1 transition:
 // 1. from load_block to rapid_motion
 void ccnc_begin_rapid(ccnc_state_data_t *data) {
-  /* Your Code Here */
+  point_t *sp = machine_setpoint(data->machine);
+  block_t *b = program_current(data->prog);
+  point_t *target = block_target(b);
+
+  machine_listen_start(data->machine);
+  data->t_blk = 0;
+  point_set_x(sp, point_x(target));
+  point_set_y(sp, point_y(target));
+  point_set_z(sp, point_z(target));
+
+  machine_sync(data->machine);
+
 }
 
 // This function is called in 1 transition:
 // 1. from load_block to interp_motion
 void ccnc_begin_interp(ccnc_state_data_t *data) {
-  /* Your Code Here */
+  data->t_blk = 0;
 }
 
 // This function is called in 1 transition:
 // 1. from rapid_motion to load_block
 void ccnc_end_rapid(ccnc_state_data_t *data) {
-  /* Your Code Here */
+  machine_listen_stop(data->machine);
 }
 
 

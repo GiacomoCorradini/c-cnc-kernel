@@ -277,6 +277,7 @@ block_getter(size_t, n, n);
 block_getter(data_t, r, r);
 block_getter(point_t *, center, center);
 block_getter(block_t *, next, next);
+block_getter(point_t *, target, target);
 
 
 
