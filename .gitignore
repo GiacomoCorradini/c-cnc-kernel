@@ -1,12 +1,12 @@
 *.o
 *.a
 *.slxc
+/*.csv
 slprj/
 /examples/*
 !/examples/*.md
 !/examples/src
 !/examples/include
-!/examples/main
 /*build*
 /src/defines.h
 Dockerfile
@@ -14,6 +14,14 @@ Dockerfile
 /bin/*
 /lib/*
 .vscode
+log*.txt
+/bb/
 
 /products*/*
 !/products*/.gitkeep
+*.dSYM
+
+/MATLAB/mqtt_pub.m
+/MATLAB/mqtt_sub.m
+/MATLAB/simple_axis_3.slx
+/MATLAB/simple_axis_data.m

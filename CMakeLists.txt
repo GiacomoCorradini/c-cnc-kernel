@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.10)
 # NOTE: This project is mostly already configured.
 #       Go to the "Targets" section to add new products
-
-#   ____           _ _           _                        
-#  |  _ \ _ __ ___| (_)_ __ ___ (_)_ __   __ _ _ __ _   _ 
-#  | |_) | '__/ _ \ | | '_ ` _ \| | '_ \ / _` | '__| | | |
-#  |  __/| | |  __/ | | | | | | | | | | | (_| | |  | |_| |
+#   _____          _ _           _                        
+#  |  __ \        | (_)         (_)                       
+#  | |__) | __ ___| |_ _ __ ___  _ _ __   __ _ _ __ _   _ 
+#  |  ___/ '__/ _ \ | | '_ ` _ \| | '_ \ / _` | '__| | | |
+#  | |   | | |  __/ | | | | | | | | | | | (_| | |  | |_| |
 #  |_|   |_|  \___|_|_|_| |_| |_|_|_| |_|\__,_|_|   \__, |
+#                                                    __/ |
 #                                                   |___/ 
-
 if (${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed! Create a build directory and run CMake from there.")
 endif()
@@ -21,7 +21,6 @@ project(C-CNC VERSION ${VERSION} LANGUAGES C CXX)
 #   \  /_____|  _ \| | | | | |/ _` |
 #   /  \_____| |_) | |_| | | | (_| |
 #  /_/\_\    |____/ \__,_|_|_|\__,_|
-                                  
 # 
 # Find out target platform
 execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine OUTPUT_VARIABLE TARGET_PLATFORM) #put into TARGET_PLATFORM result of $ gcc -dumpmachine
@@ -61,7 +60,7 @@ elseif(APPLE)
     include_directories(/usr/local/include)
     link_directories(/usr/local/lib)
   endif()
-    # on M1 Macs, brew uses /opt/homebrew:
+  # on M1 Macs, brew uses /opt/homebrew:
   if(EXISTS /opt/homebrew)
     include_directories(/opt/homebrew/include)
     link_directories(/opt/homebrew/lib)
@@ -77,13 +76,12 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 message(STATUS "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}")
 
-#   ____        _ _     _            _   _   _             
-#  | __ ) _   _(_) | __| |  ___  ___| |_| |_(_)_ __   __ _ 
-#  |  _ \| | | | | |/ _` | / __|/ _ \ __| __| | '_ \ / _` |
-#  | |_) | |_| | | | (_| | \__ \  __/ |_| |_| | | | | (_| |
-#  |____/ \__,_|_|_|\__,_| |___/\___|\__|\__|_|_| |_|\__, |
-#                                                    |___/ 
-
+#   ____        _ _     _            _   _   _                 
+#  | __ ) _   _(_) | __| |  ___  ___| |_| |_(_)_ __   __ _ ___ 
+#  |  _ \| | | | | |/ _` | / __|/ _ \ __| __| | '_ \ / _` / __|
+#  | |_) | |_| | | | (_| | \__ \  __/ |_| |_| | | | | (_| \__ \
+#  |____/ \__,_|_|_|\__,_| |___/\___|\__|\__|_|_| |_|\__, |___/
+#                                                    |___/     
 # COMPILE OPTIONS
 add_compile_options(-fPIC -D_GNU_SOURCE -Wno-backslash-newline-escape)
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
@@ -122,12 +120,10 @@ configure_file(
 #    | | (_| | | | (_| |  __/ |_\__ \
 #    |_|\__,_|_|  \__, |\___|\__|___/
 #                 |___/              
-
 add_executable(ini_test ${SOURCE_DIR}/main/ini_test.c)
 add_executable(mqtt_test ${SOURCE_DIR}/main/mqtt_test.c)
 add_executable(mqtt_stress ${SOURCE_DIR}/main/mqtt_stress.c)
 add_executable(c-cnc ${SOURCE_DIR}/main/c-cnc.c)
-
 
 list(APPEND TARGETS_LIST
   ini_test
@@ -152,13 +148,23 @@ else() # X-build: use static libraries
   target_link_libraries(c-cnc ${PROJECT_NAME}_static mosquitto_static ssl crypto dl pthread m)
 endif()
 
-#   ___           _        _ _ 
-#  |_ _|_ __  ___| |_ __ _| | |
-#   | || '_ \/ __| __/ _` | | |
-#   | || | | \__ \ || (_| | | |
-#  |___|_| |_|___/\__\__,_|_|_|
-                             
+# Copy cross compiled install products onto target system
+if(NOT TARGET_HOSTNAME)
+  SET(TARGET_HOSTNAME debian@beaglebone.local)
+endif()
+add_custom_target(scp 
+  COMMAND  "scp" "-r" "products/*" "${TARGET_HOSTNAME}:"
+  DEPENDS install
+  COMMENT "Copying products to ${TARGET_HOSTNAME}"
+  WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+)
 
+#   _____           _        _ _ 
+#  |_   _|         | |      | | |
+#    | |  _ __  ___| |_ __ _| | |
+#    | | | '_ \/ __| __/ _` | | |
+#   _| |_| | | \__ \ || (_| | | |
+#  |_____|_| |_|___/\__\__,_|_|_|
 if(NATIVE)
   set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR}/products_host)
 else()
@@ -170,23 +176,26 @@ install(TARGETS ${TARGETS_LIST}
   ARCHIVE DESTINATION lib/static
 )
 
-#   ____            _               _             
-#  |  _ \ __ _  ___| | ____ _  __ _(_)_ __   __ _ 
-#  | |_) / _` |/ __| |/ / _` |/ _` | | '_ \ / _` |
-#  |  __/ (_| | (__|   < (_| | (_| | | | | | (_| |
+#   _____           _               _             
+#  |  __ \         | |             (_)            
+#  | |__) |_ _  ___| | ____ _  __ _ _ _ __   __ _ 
+#  |  ___/ _` |/ __| |/ / _` |/ _` | | '_ \ / _` |
+#  | |  | (_| | (__|   < (_| | (_| | | | | | (_| |
 #  |_|   \__,_|\___|_|\_\__,_|\__, |_|_| |_|\__, |
+#                              __/ |         __/ |
 #                             |___/         |___/ 
 set(CPACK_GENERATOR "STGZ")
 set(CPACK_PACKAGE_VERSION ${VERSION})
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME}-${CMAKE_BUILD_TYPE})
 include(CPack)
 
-#   ____             _              __ _ _      
-#  |  _ \  ___   ___| | _____ _ __ / _(_) | ___ 
-#  | | | |/ _ \ / __| |/ / _ \ '__| |_| | |/ _ \
-#  | |_| | (_) | (__|   <  __/ |  |  _| | |  __/
-#  |____/ \___/ \___|_|\_\___|_|  |_| |_|_|\___|
-                                              
+#   _____             _              __ _ _      
+#  |  __ \           | |            / _(_) |     
+#  | |  | | ___   ___| | _____ _ __| |_ _| | ___ 
+#  | |  | |/ _ \ / __| |/ / _ \ '__|  _| | |/ _ \
+#  | |__| | (_) | (__|   <  __/ |  | | | | |  __/
+#  |_____/ \___/ \___|_|\_\___|_|  |_| |_|_|\___|
+#                                              
 # if not cross-compiling, create Dockerfile for the target platform
 if(NATIVE)
   set(TARGET_NAME CACHE STRING "Select TARGET platform")

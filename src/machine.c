@@ -30,6 +30,7 @@ typedef struct machine {
   struct mosquitto *mqt;
   struct mosquitto_message *msg;
   int connecting;
+  data_t rt_pacing;
 } machine_t;
 
 // callbacks
@@ -63,6 +64,7 @@ machine_t *machine_new(const char *ini_path) {
     rc += ini_get_double(ini, "C-CNC", "A", &m->A);
     rc += ini_get_double(ini, "C-CNC", "max_error", &m->max_error);
     rc += ini_get_double(ini, "C-CNC", "tq", &m->tq);
+    rc += ini_get_double(ini, "C-CNC", "rt_pacing", &m->rt_pacing);
     rc += ini_get_double(ini, "C-CNC", "origin_x", &x);
     rc += ini_get_double(ini, "C-CNC", "origin_y", &y);
     rc += ini_get_double(ini, "C-CNC", "origin_z", &z);
@@ -146,7 +148,7 @@ int machine_connect(machine_t *m, machine_on_message callback) {
   return 0;
 }
 
-int machine_sync(machine_t *m) {
+int machine_sync(machine_t *m, int rapid) {
   assert(m);
   //  remember that mosquitto_loop must be called in order to comms to happen
   if (mosquitto_loop(m->mqt, 0, 1) != MOSQ_ERR_SUCCESS) {
@@ -155,10 +157,11 @@ int machine_sync(machine_t *m) {
   }
   // fill up pub_buffer with current set point, comma separated
   // also, compensate for the workpiece offset from the INI file:
-  snprintf(m->pub_buffer, BUFLEN, "%f,%f,%f", 
+  snprintf(m->pub_buffer, BUFLEN, "{\"x\":%f,\"y\":%f,\"z\":%f,\"rapid\":%s}", 
     point_x(m->setpoint) + point_x(m->offset), 
     point_y(m->setpoint) + point_y(m->offset), 
-    point_z(m->setpoint) + point_z(m->offset)
+    point_z(m->setpoint) + point_z(m->offset),
+    rapid ? "true" : "false"
   );
   // send buffer over MQTT
   mosquitto_publish(m->mqt, NULL, m->pub_topic, strlen(m->pub_buffer), m->pub_buffer, 0, 0);
@@ -172,6 +175,7 @@ int machine_listen_start(machine_t *m) {
     perror("Could not subscribe");
     return 1;
   }
+  m->error = m->max_error * 10.0;
   eprintf("Subscribed to topic %s\n", m->sub_topic);
   return 0;
 }
@@ -219,6 +223,7 @@ machine_getter(point_t *, zero);
 machine_getter(point_t *, offset);
 machine_getter(point_t *, setpoint);
 machine_getter(point_t *, position);
+machine_getter(data_t, rt_pacing);
 
 
 
@@ -249,7 +254,7 @@ static void on_message(struct mosquitto *mqt, void *ud, const struct mosquitto_m
   // strrchr returns a pointer to the last occourrence of a given char
   char *subtopic = strrchr(msg->topic, '/') + 1;
 
-  eprintf("<- message: %s\n", (char *)msg->payload);
+  eprintf("<- message: %s:%s\n", msg->topic, (char *)msg->payload);
   mosquitto_message_copy(m->msg, msg);
 
   // if the last topic part is "error", then take it as a single value

@@ -279,7 +279,7 @@ block_getter(point_t *, center, center);
 block_getter(block_t *, next, next);
 block_getter(point_t *, target, target);
 
-
+ 
 
 //   ____  _        _   _         __                  
 //  / ___|| |_ __ _| |_(_) ___   / _|_   _ _ __   ___ 
