@@ -74,6 +74,7 @@ transition_func_t *const ccnc_transition_table[CCNC_NUM_STATES][CCNC_NUM_STATES]
 // valid return states: CCNC_STATE_IDLE, CCNC_STATE_STOP
 ccnc_state_t ccnc_do_init(ccnc_state_data_t *data) {
   ccnc_state_t next_state = CCNC_STATE_IDLE;
+  point_t *sp, *zero;
   signal(SIGINT, signal_handler); 
   
   // Steps:
@@ -102,10 +103,18 @@ ccnc_state_t ccnc_do_init(ccnc_state_data_t *data) {
     next_state = CCNC_STATE_STOP;
     goto next_state;
   }
+  // if available, calculate here the look-ahead
 
   // * print G-code file
   eprintf("Parsed the program %s\n", data->prog_file);
   program_print(data->prog, stderr);
+
+  sp = machine_setpoint(data->machine);
+  zero = machine_zero(data->machine);
+  point_set_x(sp, point_x(zero));
+  point_set_y(sp, point_y(zero));
+  point_set_z(sp, point_z(zero));
+  machine_sync(data->machine, 1);
 
   
 next_state:
@@ -159,6 +168,7 @@ ccnc_state_t ccnc_do_idle(ccnc_state_data_t *data) {
   }
   data->t_blk = 0;
   data->t_tot = 0;
+  machine_listen_update(data->machine);
   
   switch (next_state) {
     case CCNC_NO_CHANGE:
