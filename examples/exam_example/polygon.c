@@ -59,10 +59,14 @@ int polygon_add_corner(polygon_t *p, int i, double x, double y){
 
 double polygon_area(polygon_t *p){
   double A, sum = 0, tmp;
-  for(int j = 0; j < p->n - 1; j++){
-    tmp = (p->x[j] * p->y[j+1]) - (p->x[j+1] * p->y[j]);
-    if(j == 0) tmp *= 2;
-    sum += tmp;
+  for(int j = 0; j <= p->n - 1; j++){
+    if(j == p->n-1){    // in order to consider the last matrix
+      tmp = (p->x[j] * p->y[0]) - (p->y[j] * p->x[0]);  
+      sum += tmp;
+    }else{
+      tmp = (p->x[j] * p->y[j+1]) - (p->y[j] * p->x[j+1]);
+      sum += tmp;
+    }
   }
   A = fabs(sum) / 2;
   return A;
