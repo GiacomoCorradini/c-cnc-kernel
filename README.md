@@ -1,5 +1,4 @@
 # C-CNC
-[![Language grade: C/C++](https://img.shields.io/lgtm/grade/cpp/g/pbosetti/c-cnc.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/pbosetti/c-cnc/context:cpp)
 
 This is the repository of the code developed during the _Digital Manufacturing_ course, Department of Industrial Engineering, University of Trento.
 
@@ -111,10 +110,6 @@ The command `cmake --build build` compiles the binary executables under `build`.
 The command `cmake --build build -t install` (or `cmake --install build`) also installs optimized versions under `products_host`: executables go under `bin` and libraries under `lib`. These files are speed-optimized and **cannot be debugged**. From the project root directory they can be run as `products_host/bin/ini_test`.
 
 You are suggested to run `export PATH=$PATH:$PWD/products_host/bin` once per session, so that you can simply run a program by typing its name (e.g. `ini_test`).
-
-## Other projects
-
-The cross-build system is taken from <https://github.com/pbosetti/xtemplate>.
 
 ## Author
 
